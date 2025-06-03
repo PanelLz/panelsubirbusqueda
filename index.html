@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel LzPlay - Subir &lt;li&gt;</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --card: #1c1e26;
+      --primary: #3f8cff;
+      --text: #ffffff;
+      --text-light: #cccccc;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 1rem;
+    }
+
+    .panel {
+      background: var(--card);
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+      padding: 2rem;
+      width: 100%;
+      max-width: 500px;
+    }
+
+    h2 {
+      margin-bottom: 1rem;
+      font-size: 1.5rem;
+      color: var(--primary);
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: var(--text-light);
+    }
+
+    textarea {
+      width: 100%;
+      height: 120px;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      resize: none;
+      font-size: 1rem;
+      background: #2a2d3a;
+      color: var(--text);
+      margin-bottom: 1.5rem;
+    }
+
+    button {
+      width: 100%;
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background: #2f6fdb;
+    }
+
+    .mensaje {
+      margin-top: 1rem;
+      text-align: center;
+      font-size: 0.95rem;
+    }
+
+    @media (max-width: 480px) {
+      .panel {
+        padding: 1.5rem 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="panel">
+    <h2>Subir Serie al Buscador Github</h2>
+    <label for="codigoLi">Pega tu código &lt;li&gt;:</label>
+    <textarea id="codigoLi" placeholder="<li>Mi nuevo enlace</li>"></textarea>
+    <button onclick="agregarCodigo()">📤 Subir a GitHub</button>
+    <div class="mensaje" id="mensaje"></div>
+  </div>
+
+  <script>
+    async function agregarCodigo() {
+      const token = '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'; 
+      const username = 'LzRdrgz01';
+      const repo = 'BuscadorLzPlay';
+      const path = 'index.html';
+      const branch = 'main';
+      const nuevoLi = document.getElementById('codigoLi').value.trim();
+      const mensaje = document.getElementById('mensaje');
+
+      if (!nuevoLi) {
+        mensaje.textContent = '⚠️ El campo está vacío.';
+        return;
+      }
+
+      mensaje.textContent = '⏳ Subiendo...';
+
+      const headers = {
+        'Authorization': 'token ' + token,
+        'Accept': 'application/vnd.github.v3+json'
+      };
+
+      try {
+        const res = await fetch(`https://api.github.com/repos/${username}/${repo}/contents/${path}`, { headers });
+        const data = await res.json();
+        const content = atob(data.content);
+        const sha = data.sha;
+
+        const inicio = content.indexOf('<!-- Aqui se subiran los codigos <li> -->') + '<!-- Aqui se subiran los codigos <li> -->'.length;
+        const fin = content.indexOf('<!--FINAL-->');
+        const antes = content.slice(0, inicio);
+        const despues = content.slice(fin);
+        const entre = content.slice(inicio, fin).trim();
+
+        const nuevoContenido = `${antes}\n  ${entre}\n  ${nuevoLi}\n${despues}`;
+
+        const updateRes = await fetch(`https://api.github.com/repos/${username}/${repo}/contents/${path}`, {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify({
+            message: `Agregar nuevo <li>`,
+            content: btoa(unescape(encodeURIComponent(nuevoContenido))),
+            sha,
+            branch
+          })
+        });
+
+        if (updateRes.ok) {
+          mensaje.textContent = '✅ Código agregado con éxito.';
+          document.getElementById('codigoLi').value = '';
+        } else {
+          mensaje.textContent = '❌ Error al subir. Revisa consola.';
+          console.error(await updateRes.text());
+        }
+      } catch (err) {
+        mensaje.textContent = '❌ Error al conectar con GitHub.';
+        console.error(err);
+      }
+    }
+  </script>
+</body>
+</html>
