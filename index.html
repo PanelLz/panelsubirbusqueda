@@ -51,13 +51,11 @@
       color: var(--text-light);
     }
 
-    textarea {
+    textarea, input[type="text"] {
       width: 100%;
-      height: 120px;
       padding: 10px;
       border: none;
       border-radius: 8px;
-      resize: none;
       font-size: 1rem;
       background: #2a2d3a;
       color: var(--text);
@@ -95,22 +93,54 @@
 </head>
 <body>
   <div class="panel">
-    <h2>Subir Serie al Buscador Github</h2>
+    <h2>Subir Serie al Buscador GitHub</h2>
+
+    <div id="tokenDiv">
+      <label for="tokenInput">Token personal de GitHub:</label>
+      <input type="text" id="tokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxx" />
+      <button onclick="guardarToken()">🔐 Guardar Token</button>
+    </div>
+
     <label for="codigoLi">Pega tu código &lt;li&gt;:</label>
     <textarea id="codigoLi" placeholder="<li>Mi nuevo enlace</li>"></textarea>
     <button onclick="agregarCodigo()">📤 Subir a GitHub</button>
+
     <div class="mensaje" id="mensaje"></div>
   </div>
 
   <script>
+    const username = 'LzRdrgz01';
+    const repo = 'BuscadorLzPlay';
+    const path = 'index.html';
+    const branch = 'main';
+
+    // Mostrar u ocultar el campo del token según si ya está guardado
+    window.onload = () => {
+      if (localStorage.getItem('github_token')) {
+        document.getElementById('tokenDiv').style.display = 'none';
+      }
+    };
+
+    function guardarToken() {
+      const token = document.getElementById('tokenInput').value.trim();
+      if (token) {
+        localStorage.setItem('github_token', token);
+        document.getElementById('tokenDiv').style.display = 'none';
+        alert("✅ Token guardado correctamente.");
+      } else {
+        alert("⚠️ Por favor, ingresa un token válido.");
+      }
+    }
+
     async function agregarCodigo() {
-      const token = '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'; 
-      const username = 'LzRdrgz01';
-      const repo = 'BuscadorLzPlay';
-      const path = 'index.html';
-      const branch = 'main';
+      const token = localStorage.getItem('github_token');
       const nuevoLi = document.getElementById('codigoLi').value.trim();
       const mensaje = document.getElementById('mensaje');
+
+      if (!token) {
+        mensaje.textContent = '❌ No hay token guardado.';
+        return;
+      }
 
       if (!nuevoLi) {
         mensaje.textContent = '⚠️ El campo está vacío.';
@@ -151,7 +181,7 @@
 
         if (updateRes.ok) {
           mensaje.textContent = '✅ Código agregado con éxito.';
-          document.getElementById('codigoLi').value = '';
+          document.getElementById('codigoLi').value = ''; // Limpia el textarea
         } else {
           mensaje.textContent = '❌ Error al subir. Revisa consola.';
           console.error(await updateRes.text());
