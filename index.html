@@ -51,11 +51,12 @@
       color: var(--text-light);
     }
 
-    textarea, input[type="text"] {
+    textarea, input {
       width: 100%;
       padding: 10px;
       border: none;
       border-radius: 8px;
+      resize: none;
       font-size: 1rem;
       background: #2a2d3a;
       color: var(--text);
@@ -93,52 +94,41 @@
 </head>
 <body>
   <div class="panel">
-    <h2>Subir Serie al Buscador GitHub</h2>
+    <h2>Subir Serie al Buscador Github</h2>
 
-    <div id="tokenDiv">
-      <label for="tokenInput">Token personal de GitHub:</label>
-      <input type="text" id="tokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxx" />
-      <button onclick="guardarToken()">🔐 Guardar Token</button>
-    </div>
+    <label for="token">Token de GitHub:</label>
+    <input type="password" id="token" placeholder="Pega tu token personal" oninput="guardarToken()" />
 
     <label for="codigoLi">Pega tu código &lt;li&gt;:</label>
     <textarea id="codigoLi" placeholder="<li>Mi nuevo enlace</li>"></textarea>
-    <button onclick="agregarCodigo()">📤 Subir a GitHub</button>
 
+    <button onclick="agregarCodigo()">📤 Subir a GitHub</button>
     <div class="mensaje" id="mensaje"></div>
   </div>
 
   <script>
-    const username = 'LzRdrgz01';
-    const repo = 'BuscadorLzPlay';
-    const path = 'index.html';
-    const branch = 'main';
+    const inputToken = document.getElementById('token');
+    const mensaje = document.getElementById('mensaje');
 
-    // Mostrar u ocultar el campo del token según si ya está guardado
-    window.onload = () => {
-      if (localStorage.getItem('github_token')) {
-        document.getElementById('tokenDiv').style.display = 'none';
-      }
-    };
+    // Al cargar, si ya hay token, lo usamos automáticamente
+    if (localStorage.getItem('githubToken')) {
+      inputToken.value = localStorage.getItem('githubToken');
+    }
 
     function guardarToken() {
-      const token = document.getElementById('tokenInput').value.trim();
-      if (token) {
-        localStorage.setItem('github_token', token);
-        document.getElementById('tokenDiv').style.display = 'none';
-        alert("✅ Token guardado correctamente.");
-      } else {
-        alert("⚠️ Por favor, ingresa un token válido.");
-      }
+      localStorage.setItem('githubToken', inputToken.value.trim());
     }
 
     async function agregarCodigo() {
-      const token = localStorage.getItem('github_token');
+      const token = localStorage.getItem('githubToken');
+      const username = 'LzRdrgz01';
+      const repo = 'BuscadorLzPlay';
+      const path = 'index.html';
+      const branch = 'main';
       const nuevoLi = document.getElementById('codigoLi').value.trim();
-      const mensaje = document.getElementById('mensaje');
 
       if (!token) {
-        mensaje.textContent = '❌ No hay token guardado.';
+        mensaje.textContent = '⚠️ Debes ingresar tu token de GitHub.';
         return;
       }
 
@@ -162,9 +152,9 @@
 
         const inicio = content.indexOf('<!-- Aqui se subiran los codigos <li> -->') + '<!-- Aqui se subiran los codigos <li> -->'.length;
         const fin = content.indexOf('<!--FINAL-->');
-        const antes = content.slice(0, inicio);
-        const despues = content.slice(fin);
+        const antes = content.slice(0, inicio).trimEnd();
         const entre = content.slice(inicio, fin).trim();
+        const despues = content.slice(fin);
 
         const nuevoContenido = `${antes}\n  ${entre}\n  ${nuevoLi}\n${despues}`;
 
@@ -181,10 +171,11 @@
 
         if (updateRes.ok) {
           mensaje.textContent = '✅ Código agregado con éxito.';
-          document.getElementById('codigoLi').value = ''; // Limpia el textarea
+          document.getElementById('codigoLi').value = ''; // limpia campo
         } else {
+          const errorText = await updateRes.text();
           mensaje.textContent = '❌ Error al subir. Revisa consola.';
-          console.error(await updateRes.text());
+          console.error(errorText);
         }
       } catch (err) {
         mensaje.textContent = '❌ Error al conectar con GitHub.';
